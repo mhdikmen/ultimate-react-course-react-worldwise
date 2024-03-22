@@ -27,20 +27,25 @@ function Form() {
   const [notes, setNotes] = useState("");
   const [isLoadingGeoCoding, setIsLoadingGeoCoding] = useState(false);
   const [emoji, setEmoji] = useState();
-
+  const [geoCodingError, setGeoCodingError] = useState("");
   useEffect(
     function () {
       async function fetchCityData() {
         try {
           setIsLoadingGeoCoding(true);
+          setGeoCodingError("");
           const res = await fetch(
-            `${BASE_URL}?latitude=${lat}&longitude=${lng}"`
+            `${BASE_URL}?latitude=${lat}&longitude=${lng}`
           );
           const data = await res.json();
+
+          if (!data.countryCode)
+            throw new Error("That doesn't seem to be a city 😊");
           setCityName(data.city || data.locatity || "");
           setCountry(data.countryName);
           setEmoji(convertToEmoji(data.countryCode));
         } catch (error) {
+          setGeoCodingError(error.message);
         } finally {
           setIsLoadingGeoCoding(false);
         }
@@ -49,6 +54,9 @@ function Form() {
     },
     [lat, lng]
   );
+
+  if (isLoadingGeoCoding) return <Spinner />;
+  if (geoCodingError) return <Message message={geoCodingError} />;
   return (
     <form className={styles.form}>
       <div className={styles.row}>
